@@ -1,0 +1,10 @@
+# drvAsynSerialPortConfigure(char *portName,
+                     # char *ttyName,
+                     # unsigned int priority,
+                     # int noAutoConnect,
+                     # int noProcessEos)
+# drvAsynSerialPortConfigure("DWL_USB", "/dev/ttyUSB0", 0, 0, 0)
+
+DigipasDWLConfig("DWL_USB")
+
+dbLoadRecords("$(ASYN)/db/asynRecord.db", "P=$(PREFIX), R=asyn_DWL_USB, PORT=DWL_USB, ADDR=0, OMAX=256, IMAX=256")
