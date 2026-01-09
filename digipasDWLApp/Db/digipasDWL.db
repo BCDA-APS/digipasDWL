@@ -1,0 +1,15 @@
+record(ai, "$(P)$(R):X") {
+    field(DTYP, "asynFloat64")
+    field(INP, "@asyn($(PORT),$(ADDR=0))X_DEG")
+    field(EGU, "deg")
+    field(PREC, 3)
+    field(SCAN, "I/O Intr")
+}
+
+record(ai, "$(P)$(R):Y") {
+    field(DTYP, "asynFloat64")
+    field(INP, "@asyn($(PORT),$(ADDR=0))Y_DEG")
+    field(EGU, "deg")
+    field(PREC, 3)
+    field(SCAN, "I/O Intr")
+}

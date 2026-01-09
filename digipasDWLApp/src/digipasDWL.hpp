@@ -25,6 +25,9 @@
     // Decimal Degree Y = (((Byte [4] << 16) + (Byte [3] << 8) + Byte [2]) - 300000) / 10000
     // Decimal Degree X = (((Byte [7] << 16) + (Byte [6] << 8) + Byte [5]) - 300000) / 10000
 
+// Parameter names
+static constexpr char X_DEG_STRING[] = "X_DEG";
+static constexpr char Y_DEG_STRING[] = "Y_DEG";
 
 constexpr size_t BUFFER_SIZE = 12; // bytes
 constexpr double IO_TIMEOUT = 1.0; // sec
@@ -42,7 +45,7 @@ enum class SensorMode : char {
 
 class DigipasDWL : public asynPortDriver {
   public:
-    DigipasDWL(const char* asyn_port);
+    DigipasDWL(const char* conn_port, const char* driver_port);
     virtual void poll(void);
     virtual asynStatus writeInt32(asynUser* pasynUser, epicsInt32 value);
     virtual asynStatus writeFloat64(asynUser* pasynUser, epicsFloat64 value);
@@ -54,11 +57,19 @@ class DigipasDWL : public asynPortDriver {
     std::array<char, BUFFER_SIZE> in_buffer_;
     int count_ = 0;
 
-    void init_sensor();
+    asynStatus init_sensor();
 
-    void set_mode(SensorMode mode);
+    asynStatus set_mode(SensorMode mode);
 
-    void set_location(char country, char city);
+    asynStatus set_location(char country, char city);
 
-    void read_sensor();
+    asynStatus get_angles();
+
+    asynStatus write_read();
+    asynStatus read();
+
+  protected:
+    // Indices for parameters in asyn parameter library
+    int xdegId_;
+    int ydegId_;
 };

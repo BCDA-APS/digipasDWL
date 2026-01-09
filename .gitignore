@@ -4,6 +4,7 @@ O.*
 *BAK.adl
 bin/
 dbd/
+db/
 html/
 include/
 lib/
