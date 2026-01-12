@@ -53,6 +53,7 @@ class DigipasDWL : public asynPortDriver {
   private:
     asynUser* pasynUserDriver_;
     SensorMode mode_ = SensorMode::None;
+    std::vector<char> processing_buffer_;
     std::array<char, BUFFER_SIZE> out_buffer_;
     std::array<char, BUFFER_SIZE> in_buffer_;
     int count_ = 0;
