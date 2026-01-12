@@ -47,11 +47,24 @@ DigipasDWL::DigipasDWL(const char* conn_port, const char* driver_port, std::stri
 	return std::tolower(c);
     });
 
+
     uint8_t sensor_mode = ModeNone;
     if (mode_str == "single") {
 	sensor_mode = ModeSingle;
+	compute_angles = [this](){
+	    return Angles{
+		(((this->in_buffer_[5]<< 24) + (this->in_buffer_ [4] << 16) + (this->in_buffer_ [3]<< 8) + this->in_buffer_ [2]) -18000000.0) / 100000.0,
+		0.0
+	    };
+	};
     } else if (mode_str == "dual") {
 	sensor_mode = ModeDual;
+	compute_angles = [this](){
+	    return Angles {
+		(((this->in_buffer_[7] << 16) + (this->in_buffer_[6] << 8) + this->in_buffer_[5]) - 3000000) / 100000.0,
+		(((this->in_buffer_[4] << 16) + (this->in_buffer_[3] << 8) + this->in_buffer_[2]) - 3000000) / 100000.0
+	    };
+	};
     } else if (mode_str == "calibration") {
         asynPrint(pasynUserDriver_, ASYN_TRACE_ERROR, "Calibration mode not supported\n");
         return;
@@ -68,17 +81,8 @@ DigipasDWL::DigipasDWL(const char* conn_port, const char* driver_port, std::stri
                       epicsThreadGetStackSize(epicsThreadStackMedium), (EPICSTHREADFUNC)poll_thread_C, this);
 }
 
-double compute_x(const std::array<uint8_t, BUFFER_SIZE>& data) {
-    return (((data[7] << 16) + (data[6] << 8) + data[5]) - 3000000) / 100000.0;
-}
-
-double compute_y(const std::array<uint8_t, BUFFER_SIZE>& data) {
-    return (((data[4] << 16) + (data[3] << 8) + data[2]) - 3000000) / 100000.0;
-}
-
 void DigipasDWL::poll() {
     while (true) {
-	// auto start = std::chrono::steady_clock::now();
         lock();
 
 	constexpr size_t TEMP_BUFFER_SIZE = 1024;
@@ -112,22 +116,19 @@ void DigipasDWL::poll() {
 	    }
 
 	    if (new_data) {
-		double x_deg = compute_x(in_buffer_);
-		double y_deg = compute_y(in_buffer_);
-		printf("X: %f\n", x_deg);
-		printf("Y: %f\n\n", y_deg);
-		setDoubleParam(xdegId_, x_deg);
-		setDoubleParam(ydegId_, y_deg);
+		if (compute_angles) {
+		    auto angles = compute_angles();
+		    printf("X: %f\n", angles.x);
+		    printf("Y: %f\n\n", angles.y);
+		    setDoubleParam(xdegId_, angles.x);
+		    setDoubleParam(ydegId_, angles.y);
+		}
 	    }
 	}
 
         callParamCallbacks();
 	unlock();
 
-	// auto finish = std::chrono::steady_clock::now();
-	// auto elap = std::chrono::duration<double>(finish - start);
-	// printf("elap = %lf sec\n", elap.count());
-	// printf("Process buffer size = %ld\n", processing_buffer_.size());
 	epicsThreadSleep(0.1);
     }
 }

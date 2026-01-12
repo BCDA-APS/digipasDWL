@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <asynPortDriver.h>
+#include <functional>
 
 // Data received in single mode:
 // 0x61, 0x11, 0x01, 0x12, 0xA8, 0x80, 0x01, 0x13, 0x88, 0xAA, 0x16, 0x46
@@ -47,6 +48,11 @@ constexpr uint8_t ReplyModeDual = 0x22;
 
 constexpr size_t PROCESS_BUFFER_MAX = 2048;
 
+struct Angles {
+    double x;
+    double y;
+};
+
 class DigipasDWL : public asynPortDriver {
   public:
     DigipasDWL(const char* conn_port, const char* driver_port, std::string mode, int country, int city);
@@ -68,10 +74,10 @@ class DigipasDWL : public asynPortDriver {
 
     asynStatus set_location(uint8_t country, uint8_t city);
 
-    asynStatus get_angles();
-
     asynStatus write();
     asynStatus read();
+
+    std::function<Angles()> compute_angles = []() { return Angles{0.0, 0.0}; };
 
   protected:
     // Indices for parameters in asyn parameter library
