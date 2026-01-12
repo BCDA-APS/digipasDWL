@@ -6,24 +6,25 @@
 // 0x61, 0x11, 0x01, 0x12, 0xA8, 0x80, 0x01, 0x13, 0x88, 0xAA, 0x16, 0x46
 //
 // For DWL5800XY
-    // Decimal Degree = (((Byte [5]<< 24) + (Byte [4] << 16) + (Byte [3]<< 8) + Byte [2]) - 18000000) / 100000) * 3600
+// Decimal Degree = (((Byte [5]<< 24) + (Byte [4] << 16) + (Byte [3]<< 8) + Byte [2]) - 18000000) / 100000) *
+// 3600
 // For DWL5500XY
-    // Decimal Degree = (((Byte [5]<< 24) + (Byte [4] << 16) + (Byte [3]<< 8) + Byte [2]) -18000000) / 100000
+// Decimal Degree = (((Byte [5]<< 24) + (Byte [4] << 16) + (Byte [3]<< 8) + Byte [2]) -18000000) / 100000
 // For DWL5000XY
-    // Decimal Degree = (((Byte [5]<< 24) + (Byte [4] << 16) + (Byte [3]<< 8) + Byte [2]) -1800000) / 10000
+// Decimal Degree = (((Byte [5]<< 24) + (Byte [4] << 16) + (Byte [3]<< 8) + Byte [2]) -1800000) / 10000
 
 // Data recieved in dual mode:
 // 0x61, 0x22, 0x2D, 0xC6, 0xC0, 0x2D, 0xC6, 0xC0, 0x13, 0x88, 0x31, 0xE2
 //
 // For DWL5800XY
-    // Decimal Degree Y = (((Byte [4] << 16) + (Byte [3] << 8) + Byte [2]) - 3000000) / 100000) * 3600
-    // Decimal Degree X = (((Byte [7] << 16) + (Byte [6] << 8) + Byte [5]) - 3000000) / 100000) * 3600
+// Decimal Degree Y = (((Byte [4] << 16) + (Byte [3] << 8) + Byte [2]) - 3000000) / 100000) * 3600
+// Decimal Degree X = (((Byte [7] << 16) + (Byte [6] << 8) + Byte [5]) - 3000000) / 100000) * 3600
 // For DWL5500XY
-    // Decimal Degree Y = (((Byte [4] << 16) + (Byte [3] << 8) + Byte [2]) - 3000000) / 100000
-    // Decimal Degree X = (((Byte [7] << 16) + (Byte [6] << 8) + Byte [5]) - 3000000) / 100000
+// Decimal Degree Y = (((Byte [4] << 16) + (Byte [3] << 8) + Byte [2]) - 3000000) / 100000
+// Decimal Degree X = (((Byte [7] << 16) + (Byte [6] << 8) + Byte [5]) - 3000000) / 100000
 // For DWL5000XY
-    // Decimal Degree Y = (((Byte [4] << 16) + (Byte [3] << 8) + Byte [2]) - 300000) / 10000
-    // Decimal Degree X = (((Byte [7] << 16) + (Byte [6] << 8) + Byte [5]) - 300000) / 10000
+// Decimal Degree Y = (((Byte [4] << 16) + (Byte [3] << 8) + Byte [2]) - 300000) / 10000
+// Decimal Degree X = (((Byte [7] << 16) + (Byte [6] << 8) + Byte [5]) - 300000) / 10000
 
 // Parameter names
 static constexpr char X_DEG_STRING[] = "X_DEG";
@@ -32,16 +33,14 @@ static constexpr char Y_DEG_STRING[] = "Y_DEG";
 constexpr size_t BUFFER_SIZE = 12; // bytes
 constexpr double IO_TIMEOUT = 1.0; // sec
 
-enum class SensorMode : char {
-    Single = 0x01,
-    Dual = 0x02,
-    Vibro = 0x03,
-    Calibration = 0x0B,
-    AltZeroSingle = 0x07,
-    AltZeroDual = 0x0A,
-    Location = 0x08,
-    None = 0x00
-};
+constexpr uint8_t ModeSingle = 0x01;
+constexpr uint8_t ModeDual = 0x02;
+constexpr uint8_t ModeVibro = 0x03;
+constexpr uint8_t ModeCalibration = 0x0B;
+constexpr uint8_t ModeAltZeroSingle = 0x07;
+constexpr uint8_t ModeAltZeroDual = 0x0A;
+constexpr uint8_t ModeLocation = 0x08;
+constexpr uint8_t ModeNone = 0x00;
 
 class DigipasDWL : public asynPortDriver {
   public:
@@ -52,17 +51,17 @@ class DigipasDWL : public asynPortDriver {
 
   private:
     asynUser* pasynUserDriver_;
-    SensorMode mode_ = SensorMode::None;
-    std::vector<char> processing_buffer_;
-    std::array<char, BUFFER_SIZE> out_buffer_;
-    std::array<char, BUFFER_SIZE> in_buffer_;
+    uint8_t mode_ = ModeNone;
+    std::vector<uint8_t> processing_buffer_;
+    std::array<uint8_t, BUFFER_SIZE> out_buffer_;
+    std::array<uint8_t, BUFFER_SIZE> in_buffer_;
     int count_ = 0;
 
     asynStatus init_sensor();
 
-    asynStatus set_mode(SensorMode mode);
+    asynStatus set_mode(uint8_t mode);
 
-    asynStatus set_location(char country, char city);
+    asynStatus set_location(uint8_t country, uint8_t city);
 
     asynStatus get_angles();
 
