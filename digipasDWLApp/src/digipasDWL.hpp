@@ -41,6 +41,11 @@ constexpr uint8_t ModeAltZeroSingle = 0x07;
 constexpr uint8_t ModeAltZeroDual = 0x0A;
 constexpr uint8_t ModeLocation = 0x08;
 constexpr uint8_t ModeNone = 0x00;
+constexpr uint8_t ReplyStart = 0x61;
+constexpr uint8_t ReplyModeSingle = 0x11;
+constexpr uint8_t ReplyModeDual = 0x22;
+
+constexpr size_t PROCESS_BUFFER_MAX = 2048;
 
 class DigipasDWL : public asynPortDriver {
   public:
@@ -65,7 +70,7 @@ class DigipasDWL : public asynPortDriver {
 
     asynStatus get_angles();
 
-    asynStatus write_read();
+    asynStatus write();
     asynStatus read();
 
   protected:

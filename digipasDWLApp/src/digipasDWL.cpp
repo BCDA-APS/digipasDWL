@@ -47,13 +47,16 @@ DigipasDWL::DigipasDWL(const char* conn_port, const char* driver_port, std::stri
 	return std::tolower(c);
     });
 
-    char sensor_mode = ModeNone;
+    uint8_t sensor_mode = ModeNone;
     if (mode_str == "single") {
 	sensor_mode = ModeSingle;
     } else if (mode_str == "dual") {
 	sensor_mode = ModeDual;
     } else if (mode_str == "calibration") {
         asynPrint(pasynUserDriver_, ASYN_TRACE_ERROR, "Calibration mode not supported\n");
+        return;
+    } else {
+        asynPrint(pasynUserDriver_, ASYN_TRACE_ERROR, "Unknown mode %s\n", mode_str.c_str());
         return;
     }
 
@@ -78,12 +81,14 @@ void DigipasDWL::poll() {
 	// auto start = std::chrono::steady_clock::now();
         lock();
 
-	std::array<uint8_t, 1024> temp_buffer;
+	constexpr size_t TEMP_BUFFER_SIZE = 1024;
+	constexpr double QUICK_READ_TIMEOUT = 0.05;
+	std::array<uint8_t, TEMP_BUFFER_SIZE> temp_buffer;
 	size_t nbytesin = 0;
 	int eom_reason;
 	asynStatus status = pasynOctetSyncIO->read(pasynUserDriver_, (char*)temp_buffer.data(), temp_buffer.size(),
-						   0.05, &nbytesin, &eom_reason);
-	printf("nread = %ld\n", nbytesin);
+						   QUICK_READ_TIMEOUT, &nbytesin, &eom_reason);
+	// TODO: implement actual timeout
 	if ((status != asynSuccess && status != asynTimeout) || nbytesin == 0) {
 	    asynPrint(pasynUserDriver_, ASYN_TRACE_ERROR, "pasynOctetSyncIO->read() failed[%d]. Read %ld bytes\n",
 		      eom_reason, nbytesin);
@@ -92,7 +97,8 @@ void DigipasDWL::poll() {
 
 	    bool new_data = false;
 	    while (processing_buffer_.size() >= BUFFER_SIZE) {
-		if (processing_buffer_[0] == 0x61 && processing_buffer_[1] == 0x22) {
+		const uint8_t mode_check = mode_ == ModeDual ? ReplyModeDual : mode_ == ModeSingle ? ReplyModeSingle : ModeNone;
+		if (processing_buffer_[0] == ReplyStart && processing_buffer_[1] == mode_check) {
 		    std::copy(processing_buffer_.begin(), processing_buffer_.begin()+BUFFER_SIZE, in_buffer_.begin());
 		    processing_buffer_.erase(processing_buffer_.begin(),processing_buffer_.begin()+BUFFER_SIZE);
 		    new_data = true;
@@ -101,22 +107,19 @@ void DigipasDWL::poll() {
 		}
 	    }
 
-	    if (processing_buffer_.size() > 2048) {
+	    if (processing_buffer_.size() > PROCESS_BUFFER_MAX) {
 		processing_buffer_.clear();
 	    }
 
 	    if (new_data) {
 		double x_deg = compute_x(in_buffer_);
 		double y_deg = compute_y(in_buffer_);
-
 		printf("X: %f\n", x_deg);
 		printf("Y: %f\n\n", y_deg);
-
 		setDoubleParam(xdegId_, x_deg);
 		setDoubleParam(ydegId_, y_deg);
 	    }
 	}
-
 
         callParamCallbacks();
 	unlock();
@@ -133,7 +136,7 @@ asynStatus DigipasDWL::init_sensor() {
     out_buffer_.fill(0x0);
     out_buffer_[0] = 0x06;
     out_buffer_[1] = 0x24;
-    return write_read();
+    return write();
 }
 
 asynStatus DigipasDWL::set_location(uint8_t country, uint8_t city) {
@@ -146,23 +149,9 @@ asynStatus DigipasDWL::set_location(uint8_t country, uint8_t city) {
     out_buffer_[5] = 0x00;
     out_buffer_[6] = 0x00;
     out_buffer_[7] = 0x5A;
-    return write_read();
+    return write();
 }
 
-
-asynStatus DigipasDWL::get_angles() {
-    asynStatus status = read();
-    if (status)
-        return status;
-
-    double x_deg = compute_x(in_buffer_);
-    double y_deg = compute_y(in_buffer_);
-
-    setDoubleParam(xdegId_, x_deg);
-    setDoubleParam(ydegId_, y_deg);
-
-    return status;
-}
 
 asynStatus DigipasDWL::set_mode(uint8_t mode) {
     out_buffer_.fill(0x0);
@@ -171,38 +160,20 @@ asynStatus DigipasDWL::set_mode(uint8_t mode) {
     out_buffer_[2] = mode;
     out_buffer_[3] = 0xAA;
 
-    asynStatus status = write_read();
+    asynStatus status = write();
     if (status)
         return status;
 
-    return status;
-
     mode_ = mode;
-}
-
-asynStatus DigipasDWL::read() {
-    size_t nbytesin;
-    int eom_reason;
-    asynStatus status = pasynOctetSyncIO->read(pasynUserDriver_, (char*)in_buffer_.data(), in_buffer_.size(),
-                                               IO_TIMEOUT, &nbytesin, &eom_reason);
-    if (status) {
-        asynPrint(pasynUserDriver_, ASYN_TRACE_ERROR, "pasynOctetSyncIO->read() failed[%d]. Read %ld bytes\n",
-                  eom_reason, nbytesin);
-    }
     return status;
 }
 
-asynStatus DigipasDWL::write_read() {
-    size_t nbytesin;
+asynStatus DigipasDWL::write() {
     size_t nbytesout;
-    int eom_reason;
-    asynStatus status = pasynOctetSyncIO->writeRead(pasynUserDriver_, (char*)out_buffer_.data(), out_buffer_.size(),
-                                                    (char*)in_buffer_.data(), in_buffer_.size(), IO_TIMEOUT,
-                                                    &nbytesout, &nbytesin, &eom_reason);
+    asynStatus status = pasynOctetSyncIO->write(pasynUserDriver_, (char*)out_buffer_.data(), out_buffer_.size(), IO_TIMEOUT, &nbytesout);
     if (status) {
         asynPrint(pasynUserDriver_, ASYN_TRACE_ERROR,
-                  "pasynOctetSyncIO->writeRead() failed[%d]. Wrote %ld, read %ld bytes\n", eom_reason,
-                  nbytesout, nbytesin);
+                  "pasynOctetSyncIO->write() failed. Wrote %ld\n", nbytesout);
     }
     return status;
 }
@@ -227,6 +198,7 @@ asynStatus DigipasDWL::writeFloat64(asynUser* pasynUser, epicsFloat64 value) {
 extern "C" int DigipasDWLConfig(const char* conn_port, const char* driver_port, const char* mode, int country, int city) {
     DigipasDWL* pDigipasDWL = new DigipasDWL(conn_port, driver_port, mode, country, city);
     pDigipasDWL = NULL;
+    (void)pDigipasDWL;
     return (asynSuccess);
 }
 
