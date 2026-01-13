@@ -21,3 +21,4 @@ scan1Menu.sav
 .iocsh_history
 .cache/
 .loglogin
+compile_commands.json

@@ -1,7 +1,12 @@
 # Digi-Pas Inclination Sensor Module
+EPICS support for [Digi-Pas DWL-5x00](https://www.digipas.com/product/precision-measurement/2-axis-inclination-sensor-module/)
+based on `asynPortDriver`.
 
-Currently supports only model DWL5500XY.
+Currently only model DWL5500XY is supported.
 
+To support other models, a parameter to specify which model you are using should be added to
+the driver's iocsh function, then the below information taken from the manual should be used for
+computing the angles based on the device model.
 ```
 Data received in single mode:
 0x61, 0x11, 0x01, 0x12, 0xA8, 0x80, 0x01, 0x13, 0x88, 0xAA, 0x16, 0x46
