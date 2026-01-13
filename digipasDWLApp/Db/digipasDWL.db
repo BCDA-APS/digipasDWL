@@ -1,23 +1,97 @@
-record(ai, "$(P)$(R):X") {
+# Raw records are the actual sensor values
+record(ai, "$(P)$(R):x_raw") {
     field(DTYP, "asynFloat64")
     field(INP, "@asyn($(PORT),$(ADDR=0))DUAL_X_DEG")
     field(EGU, "deg")
     field(PREC, 3)
     field(SCAN, "I/O Intr")
 }
-
-record(ai, "$(P)$(R):Y") {
+record(ai, "$(P)$(R):y_raw") {
     field(DTYP, "asynFloat64")
     field(INP, "@asyn($(PORT),$(ADDR=0))DUAL_Y_DEG")
     field(EGU, "deg")
     field(PREC, 3)
     field(SCAN, "I/O Intr")
 }
-
-record(ai, "$(P)$(R):Angle") {
+record(ai, "$(P)$(R):angle_raw") {
     field(DTYP, "asynFloat64")
     field(INP, "@asyn($(PORT),$(ADDR=0))SINGLE_DEG")
     field(EGU, "deg")
     field(PREC, 3)
     field(SCAN, "I/O Intr")
+}
+
+
+# User offset values
+record(ao, "$(P)$(R):XOffset") {
+    field(EGU, "deg")
+    field(PREC, 3)
+    field(VAL, 0)
+}
+record(ao, "$(P)$(R):YOffset") {
+    field(EGU, "deg")
+    field(PREC, 3)
+    field(VAL, 0)
+}
+record(ao, "$(P)$(R):AngleOffset") {
+    field(EGU, "deg")
+    field(PREC, 3)
+    field(VAL, 0)
+}
+
+
+# Compute user readback values from actual value minus offsets
+record(calcout, "$(P)$(R):x_offset_calc") {
+    field(INPA, "$(P)$(R):x_raw.VAL CP")
+    field(INPB, "$(P)$(R):XOffset.VAL CP")
+    field(CALC, "A - B")
+    field(OUT, "$(P)$(R):X.VAL PP")
+}
+record(calcout, "$(P)$(R):y_offset_calc") {
+    field(INPA, "$(P)$(R):y_raw.VAL CP")
+    field(INPB, "$(P)$(R):YOffset.VAL CP")
+    field(CALC, "A - B")
+    field(OUT, "$(P)$(R):Y.VAL PP")
+}
+record(calcout, "$(P)$(R):angle_offset_calc") {
+    field(INPA, "$(P)$(R):angle_raw.VAL CP")
+    field(INPB, "$(P)$(R):AngleOffset.VAL CP")
+    field(CALC, "A - B")
+    field(OUT, "$(P)$(R):Angle.VAL PP")
+}
+
+
+# Sets the current position as zero
+record(ao, "$(P)$(R):SetZeroAngle") {
+    field(OMSL, "closed_loop")
+    field(DOL, "$(P)$(R):angle_raw.VAL")
+    field(OUT, "$(P)$(R):AngleOffset.VAL PP")
+}
+record(ao, "$(P)$(R):SetZeroX") {
+    field(OMSL, "closed_loop")
+    field(DOL, "$(P)$(R):x_raw.VAL")
+    field(OUT, "$(P)$(R):XOffset.VAL PP")
+}
+record(ao, "$(P)$(R):SetZeroY") {
+    field(OMSL, "closed_loop")
+    field(DOL, "$(P)$(R):y_raw.VAL")
+    field(OUT, "$(P)$(R):YOffset.VAL PP")
+}
+
+
+# User readback values with offset applied
+record(ai, "$(P)$(R):X") {
+    field(DESC, "User X angle readback")
+    field(EGU, "deg")
+    field(PREC, 3)
+}
+record(ai, "$(P)$(R):Y") {
+    field(DESC, "User Y angle readback")
+    field(EGU, "deg")
+    field(PREC, 3)
+}
+record(ai, "$(P)$(R):Angle") {
+    field(DESC, "User angle readback")
+    field(EGU, "deg")
+    field(PREC, 3)
 }
