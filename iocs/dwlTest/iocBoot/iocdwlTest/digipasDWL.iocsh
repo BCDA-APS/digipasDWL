@@ -8,8 +8,8 @@ asynSetOption("$(DWL_PORT)", 0, "stop", 1)
 # Initialize
 # USA = 0x42
 # Chicago = 0x05
-# DigipasDWLConfig("$(DWL_PORT)", "DWL1", "Dual", 0x42, 0x05)
-DigipasDWLConfig("$(DWL_PORT)", "DWL1", "Single", 0x42, 0x05)
+DigipasDWLConfig("$(DWL_PORT)", "DWL1", "Dual", 0x42, 0x05)
+# DigipasDWLConfig("$(DWL_PORT)", "DWL1", "Single", 0x42, 0x05)
 
 # Load PVs
 dbLoadRecords("$(DIGIPAS_DWL)/db/digipasDWL.db", "P=$(PREFIX),R=DWL,PORT=DWL1")

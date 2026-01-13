@@ -5,7 +5,6 @@
 #include <epicsThread.h>
 #include <iocsh.h>
 #include <algorithm>
-#include <chrono>
 
 static void poll_thread_C(void* pPvt) {
     DigipasDWL* pDigipasDWL = (DigipasDWL*)pPvt;
@@ -17,7 +16,7 @@ constexpr int INTERFACE_MASK = asynInt32Mask | asynFloat64Mask | asynOctetMask |
 constexpr int INTERRUPT_MASK = asynInt32Mask | asynFloat64Mask | asynOctetMask;
 constexpr int ASYN_FLAGS = ASYN_MULTIDEVICE | ASYN_CANBLOCK;
 
-DigipasDWL::DigipasDWL(const char* conn_port, const char* driver_port, std::string mode_str, int country, int city)
+DigipasDWL::DigipasDWL(const char* conn_port, const char* driver_port, const char* mode_str, int country, int city)
     : asynPortDriver(driver_port, MAX_CONTROLLERS, INTERFACE_MASK, INTERRUPT_MASK, ASYN_FLAGS, 1, 0, 0) {
 
     asynStatus status = pasynOctetSyncIO->connect(conn_port, 0, &pasynUserDriver_, NULL);
@@ -26,13 +25,9 @@ DigipasDWL::DigipasDWL(const char* conn_port, const char* driver_port, std::stri
         return;
     }
 
-    createParam(X_DEG_STRING, asynParamFloat64, &xdegId_);
-    createParam(Y_DEG_STRING, asynParamFloat64, &ydegId_);
-
-    // TODO:
-    // - device version argument to constructor
-    // - member variables: std::function<double(const std::array<char, 12>&)> compute_x, compute_y
-    // - here in constructor, set those functions based on value of device version
+    createParam(DUAL_X_DEG_STRING, asynParamFloat64, &dualXdegId_);
+    createParam(DUAL_Y_DEG_STRING, asynParamFloat64, &dualYdegId_);
+    createParam(SINGLE_DEG_STRING, asynParamFloat64, &singleDegId_);
 
     status = init_sensor();
     if (status)
@@ -43,37 +38,7 @@ DigipasDWL::DigipasDWL(const char* conn_port, const char* driver_port, std::stri
     if (status)
         return;
 
-    std::transform(mode_str.begin(), mode_str.end(), mode_str.begin(), [](auto& c){
-	return std::tolower(c);
-    });
-
-
-    uint8_t sensor_mode = ModeNone;
-    if (mode_str == "single") {
-	sensor_mode = ModeSingle;
-	compute_angles = [this](){
-	    return Angles{
-		(((this->in_buffer_[5]<< 24) + (this->in_buffer_ [4] << 16) + (this->in_buffer_ [3]<< 8) + this->in_buffer_ [2]) -18000000.0) / 100000.0,
-		0.0
-	    };
-	};
-    } else if (mode_str == "dual") {
-	sensor_mode = ModeDual;
-	compute_angles = [this](){
-	    return Angles {
-		(((this->in_buffer_[7] << 16) + (this->in_buffer_[6] << 8) + this->in_buffer_[5]) - 3000000) / 100000.0,
-		(((this->in_buffer_[4] << 16) + (this->in_buffer_[3] << 8) + this->in_buffer_[2]) - 3000000) / 100000.0
-	    };
-	};
-    } else if (mode_str == "calibration") {
-        asynPrint(pasynUserDriver_, ASYN_TRACE_ERROR, "Calibration mode not supported\n");
-        return;
-    } else {
-        asynPrint(pasynUserDriver_, ASYN_TRACE_ERROR, "Unknown mode %s\n", mode_str.c_str());
-        return;
-    }
-
-    status = set_mode(sensor_mode);
+    status = set_mode(mode_str);
     if (status)
         return;
 
@@ -83,7 +48,7 @@ DigipasDWL::DigipasDWL(const char* conn_port, const char* driver_port, std::stri
 
 void DigipasDWL::poll() {
     while (true) {
-        lock();
+	lock();
 
 	constexpr size_t TEMP_BUFFER_SIZE = 1024;
 	constexpr double QUICK_READ_TIMEOUT = 0.05;
@@ -116,19 +81,18 @@ void DigipasDWL::poll() {
 	    }
 
 	    if (new_data) {
-		if (compute_angles) {
-		    auto angles = compute_angles();
-		    printf("X: %f\n", angles.x);
-		    printf("Y: %f\n\n", angles.y);
-		    setDoubleParam(xdegId_, angles.x);
-		    setDoubleParam(ydegId_, angles.y);
+		auto [first, second] = compute_angles();
+		if (mode_ == ModeDual) {
+		    setDoubleParam(dualXdegId_, first);
+		    setDoubleParam(dualYdegId_, second);
+		} else if (mode_ == ModeSingle) {
+		    setDoubleParam(singleDegId_, first);
 		}
 	    }
 	}
 
         callParamCallbacks();
 	unlock();
-
 	epicsThreadSleep(0.1);
     }
 }
@@ -153,8 +117,36 @@ asynStatus DigipasDWL::set_location(uint8_t country, uint8_t city) {
     return write();
 }
 
+asynStatus DigipasDWL::set_mode(std::string mode_str) {
 
-asynStatus DigipasDWL::set_mode(uint8_t mode) {
+    // make lowercase so mode input is case insensative
+    std::transform(mode_str.begin(), mode_str.end(), mode_str.begin(), [](auto& c){
+	return std::tolower(c);
+    });
+
+    // set compute_angles function based on the mode
+    uint8_t mode = ModeNone;
+    if (mode_str == "single") {
+	mode = ModeSingle;
+	compute_angles = [this]{
+	    return std::tuple{
+		(((this->in_buffer_[5]<< 24) + (this->in_buffer_ [4] << 16) + (this->in_buffer_ [3]<< 8) + this->in_buffer_ [2]) -18000000.0) / 100000.0,
+		0.0
+	    };
+	};
+    } else if (mode_str == "dual") {
+	mode = ModeDual;
+	compute_angles = [this]{
+	    return std::tuple{
+		(((this->in_buffer_[7] << 16) + (this->in_buffer_[6] << 8) + this->in_buffer_[5]) - 3000000) / 100000.0,
+		(((this->in_buffer_[4] << 16) + (this->in_buffer_[3] << 8) + this->in_buffer_[2]) - 3000000) / 100000.0
+	    };
+	};
+    } else {
+        asynPrint(pasynUserDriver_, ASYN_TRACE_ERROR, "Invalid mode requested: %s\n", mode_str.c_str());
+	return asynError;
+    }
+
     out_buffer_.fill(0x0);
     out_buffer_[0] = 0x06;
     out_buffer_[1] = 0x01;
@@ -166,11 +158,12 @@ asynStatus DigipasDWL::set_mode(uint8_t mode) {
         return status;
 
     mode_ = mode;
+    asynPrint(pasynUserDriver_, ASYN_REASON_SIGNAL, "Mode set to %s(0x%X)\n", mode_str.c_str(), mode_);
     return status;
 }
 
 asynStatus DigipasDWL::write() {
-    size_t nbytesout;
+    size_t nbytesout = 0;
     asynStatus status = pasynOctetSyncIO->write(pasynUserDriver_, (char*)out_buffer_.data(), out_buffer_.size(), IO_TIMEOUT, &nbytesout);
     if (status) {
         asynPrint(pasynUserDriver_, ASYN_TRACE_ERROR,
