@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>240</width>
-    <height>100</height>
+    <width>475</width>
+    <height>356</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -277,7 +277,7 @@
    <widget class="caLineEdit" name="caLineEdit_30">
     <property name="geometry">
      <rect>
-      <x>165</x>
+      <x>95</x>
       <y>45</y>
       <width>25</width>
       <height>20</height>
@@ -328,7 +328,7 @@
    <widget class="caLineEdit" name="caLineEdit_31">
     <property name="geometry">
      <rect>
-      <x>165</x>
+      <x>95</x>
       <y>70</y>
       <width>25</width>
       <height>20</height>
@@ -379,7 +379,7 @@
    <widget class="caTextEntry" name="catextentry">
     <property name="geometry">
      <rect>
-      <x>100</x>
+      <x>145</x>
       <y>45</y>
       <width>60</width>
       <height>20</height>
@@ -402,7 +402,7 @@
    <widget class="caTextEntry" name="catextentry_2">
     <property name="geometry">
      <rect>
-      <x>100</x>
+      <x>145</x>
       <y>70</y>
       <width>60</width>
       <height>20</height>
@@ -425,7 +425,7 @@
    <widget class="caLabel" name="caLabel_10">
     <property name="geometry">
      <rect>
-      <x>100</x>
+      <x>145</x>
       <y>30</y>
       <width>60</width>
       <height>15</height>
@@ -466,7 +466,7 @@
    <widget class="caMessageButton" name="camessagebutton">
     <property name="geometry">
      <rect>
-      <x>195</x>
+      <x>210</x>
       <y>45</y>
       <width>40</width>
       <height>20</height>
@@ -492,7 +492,7 @@
    <widget class="caMessageButton" name="camessagebutton_2">
     <property name="geometry">
      <rect>
-      <x>195</x>
+      <x>210</x>
       <y>70</y>
       <width>40</width>
       <height>20</height>
@@ -513,6 +513,34 @@
     </property>
     <property name="releaseMessage">
      <string notr="true">1</string>
+    </property>
+   </widget>
+   <widget class="caStripPlot" name="castripplot">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>105</y>
+      <width>451</width>
+      <height>241</height>
+     </rect>
+    </property>
+    <property name="TitleY">
+     <string notr="true">Angle</string>
+    </property>
+    <property name="channels" stdset="0">
+     <string>$(P)$(R):X.VAL;$(P)$(R):Y.VAL</string>
+    </property>
+    <property name="YaxisLimitsMax_1">
+     <double>10.000000000000000</double>
+    </property>
+    <property name="YaxisLimitsMin_1">
+     <double>-10.000000000000000</double>
+    </property>
+    <property name="YaxisLimitsMax_2">
+     <double>10.000000000000000</double>
+    </property>
+    <property name="YaxisLimitsMin_2">
+     <double>-10.000000000000000</double>
     </property>
    </widget>
   </widget>
@@ -542,6 +570,11 @@
    <class>caLineEdit</class>
    <extends>QLineEdit</extends>
    <header>caLineEdit</header>
+  </customwidget>
+  <customwidget>
+   <class>caStripPlot</class>
+   <extends>QFrame</extends>
+   <header>caStripPlot</header>
   </customwidget>
  </customwidgets>
  <resources/>

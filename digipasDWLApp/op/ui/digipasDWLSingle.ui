@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>215</width>
-    <height>70</height>
+    <width>460</width>
+    <height>330</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -93,7 +93,7 @@
    <widget class="caTextEntry" name="catextentry_3">
     <property name="geometry">
      <rect>
-      <x>75</x>
+      <x>120</x>
       <y>45</y>
       <width>60</width>
       <height>20</height>
@@ -167,7 +167,7 @@
    <widget class="caLineEdit" name="caLineEdit_33">
     <property name="geometry">
      <rect>
-      <x>140</x>
+      <x>70</x>
       <y>45</y>
       <width>25</width>
       <height>20</height>
@@ -218,7 +218,7 @@
    <widget class="caMessageButton" name="camessagebutton_3">
     <property name="geometry">
      <rect>
-      <x>170</x>
+      <x>185</x>
       <y>45</y>
       <width>40</width>
       <height>20</height>
@@ -244,7 +244,7 @@
    <widget class="caLabel" name="caLabel_14">
     <property name="geometry">
      <rect>
-      <x>75</x>
+      <x>120</x>
       <y>30</y>
       <width>60</width>
       <height>15</height>
@@ -282,6 +282,34 @@
      <enum>QFrame::NoFrame</enum>
     </property>
    </widget>
+   <widget class="caStripPlot" name="castripplot">
+    <property name="geometry">
+     <rect>
+      <x>5</x>
+      <y>80</y>
+      <width>451</width>
+      <height>241</height>
+     </rect>
+    </property>
+    <property name="TitleY">
+     <string notr="true">Angle</string>
+    </property>
+    <property name="channels" stdset="0">
+     <string>$(P)$(R):Angle.VAL</string>
+    </property>
+    <property name="YaxisLimitsMax_1">
+     <double>10.000000000000000</double>
+    </property>
+    <property name="YaxisLimitsMin_1">
+     <double>-10.000000000000000</double>
+    </property>
+    <property name="YaxisLimitsMax_2">
+     <double>100.000000000000000</double>
+    </property>
+    <property name="YaxisLimitsMin_2">
+     <double>0.000000000000000</double>
+    </property>
+   </widget>
   </widget>
  </widget>
  <customwidgets>
@@ -309,6 +337,11 @@
    <class>caLineEdit</class>
    <extends>QLineEdit</extends>
    <header>caLineEdit</header>
+  </customwidget>
+  <customwidget>
+   <class>caStripPlot</class>
+   <extends>QFrame</extends>
+   <header>caStripPlot</header>
   </customwidget>
  </customwidgets>
  <resources/>
