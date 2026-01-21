@@ -58,8 +58,8 @@ class DigipasDWL : public asynPortDriver {
     asynStatus read();
 
     // Function to compute the angles from the input data.
-    // In single mode, the the returned tuple is [angle, 0.0]
-    // In dual mode, the returned tuple is [x, y]
+    // In single mode, the returned tuple is [angle, 0.0]
+    // In dual mode, the returned tuple is [x_angle, y_angle]
     std::function<std::tuple<double, double>()> compute_angles = []() { return std::tuple{0.0, 0.0}; };
 
   protected:
